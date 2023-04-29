@@ -1,8 +1,4 @@
-# DEPRECATION NOTICE
-
-This repository is not maintained any longer.
-
-## go-sockaddr - `{Raw,}Sockaddr` conversions
+## go-sockaddr2 - `{Raw,}Sockaddr` conversions
 
 See https://groups.google.com/d/msg/golang-nuts/B-meiFfkmH0/-TxP1r6zvk8J
 This package extracts unexported code from `golang.org/x/unix` to help in converting
@@ -17,8 +13,8 @@ net.*Addr
 
 Godoc:
 
-- sockaddr - http://godoc.org/github.com/libp2p/go-sockaddr
-- sockaddr/net - http://godoc.org/github.com/libp2p/go-sockaddr/net
+- sockaddr - http://godoc.org/github.com/saletnik/go-sockaddr2
+- sockaddr/net - http://godoc.org/github.com/saletnik/go-sockaddr2/net
 
 ---
 

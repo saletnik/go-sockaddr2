@@ -2,7 +2,7 @@
 package sockaddr
 
 import (
-	sockaddrnet "github.com/libp2p/go-sockaddr/net"
+	sockaddrnet "github.com/saletnik/go-sockaddr2/net"
 )
 
 // Socklen is a type for the length of a sockaddr.
