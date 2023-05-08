@@ -20,63 +20,67 @@ func sockaddrToAny(sa unix.Sockaddr) (*unix.RawSockaddrAny, Socklen, error) {
 		if sa.Port < 0 || sa.Port > 0xFFFF {
 			return nil, 0, syscall.EINVAL
 		}
-		var raw unix.RawSockaddrInet4
-		raw.Len = unix.SizeofSockaddrInet4
-		raw.Family = unix.AF_INET
-		p := (*[2]byte)(unsafe.Pointer(&raw.Port))
+		raw := new(unix.RawSockaddrAny)
+		raw4 := (*unix.RawSockaddrInet4)(unsafe.Pointer(raw))
+		raw4.Len = unix.SizeofSockaddrInet4
+		raw4.Family = unix.AF_INET
+		p := (*[2]byte)(unsafe.Pointer(&raw4.Port))
 		p[0] = byte(sa.Port >> 8)
 		p[1] = byte(sa.Port)
 		for i := 0; i < len(sa.Addr); i++ {
-			raw.Addr[i] = sa.Addr[i]
+			raw4.Addr[i] = sa.Addr[i]
 		}
-		return (*unix.RawSockaddrAny)(unsafe.Pointer(&raw)), Socklen(raw.Len), nil
+		return raw, Socklen(raw4.Len), nil
 
 	case *unix.SockaddrInet6:
 		if sa.Port < 0 || sa.Port > 0xFFFF {
 			return nil, 0, syscall.EINVAL
 		}
-		var raw unix.RawSockaddrInet6
-		raw.Len = unix.SizeofSockaddrInet6
-		raw.Family = unix.AF_INET6
-		p := (*[2]byte)(unsafe.Pointer(&raw.Port))
+		raw := new(unix.RawSockaddrAny)
+		raw6 := (*unix.RawSockaddrInet6)(unsafe.Pointer(raw))
+		raw6.Len = unix.SizeofSockaddrInet6
+		raw6.Family = unix.AF_INET6
+		p := (*[2]byte)(unsafe.Pointer(&raw6.Port))
 		p[0] = byte(sa.Port >> 8)
 		p[1] = byte(sa.Port)
-		raw.Scope_id = sa.ZoneId
+		raw6.Scope_id = sa.ZoneId
 		for i := 0; i < len(sa.Addr); i++ {
-			raw.Addr[i] = sa.Addr[i]
+			raw6.Addr[i] = sa.Addr[i]
 		}
-		return (*unix.RawSockaddrAny)(unsafe.Pointer(&raw)), Socklen(raw.Len), nil
+		return raw, Socklen(raw6.Len), nil
 
 	case *unix.SockaddrUnix:
 		name := sa.Name
 		n := len(name)
-		var raw unix.RawSockaddrUnix
-		if n >= len(raw.Path) || n == 0 {
+		raw := new(unix.RawSockaddrAny)
+		rawx := (*unix.RawSockaddrUnix)(unsafe.Pointer(raw))
+		if n >= len(rawx.Path) || n == 0 {
 			return nil, 0, syscall.EINVAL
 		}
-		raw.Len = byte(3 + n) // 2 for Family, Len; 1 for NUL
-		raw.Family = unix.AF_UNIX
+		rawx.Len = byte(3 + n) // 2 for Family, Len; 1 for NUL
+		rawx.Family = unix.AF_UNIX
 		for i := 0; i < n; i++ {
-			raw.Path[i] = int8(name[i])
+			rawx.Path[i] = int8(name[i])
 		}
-		return (*unix.RawSockaddrAny)(unsafe.Pointer(&raw)), Socklen(raw.Len), nil
+		return raw, Socklen(rawx.Len), nil
 
 	case *unix.SockaddrDatalink:
 		if sa.Index == 0 {
 			return nil, 0, syscall.EINVAL
 		}
-		var raw unix.RawSockaddrDatalink
-		raw.Len = sa.Len
-		raw.Family = unix.AF_LINK
-		raw.Index = sa.Index
-		raw.Type = sa.Type
-		raw.Nlen = sa.Nlen
-		raw.Alen = sa.Alen
-		raw.Slen = sa.Slen
-		for i := 0; i < len(raw.Data); i++ {
-			raw.Data[i] = sa.Data[i]
+		raw := new(unix.RawSockaddrAny)
+		rawl := (*unix.RawSockaddrDatalink)(unsafe.Pointer(raw))
+		rawl.Len = sa.Len
+		rawl.Family = unix.AF_LINK
+		rawl.Index = sa.Index
+		rawl.Type = sa.Type
+		rawl.Nlen = sa.Nlen
+		rawl.Alen = sa.Alen
+		rawl.Slen = sa.Slen
+		for i := 0; i < len(rawl.Data); i++ {
+			rawl.Data[i] = sa.Data[i]
 		}
-		return (*unix.RawSockaddrAny)(unsafe.Pointer(&raw)), unix.SizeofSockaddrDatalink, nil
+		return raw, unix.SizeofSockaddrDatalink, nil
 	}
 	return nil, 0, syscall.EAFNOSUPPORT
 }

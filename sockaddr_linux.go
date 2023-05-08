@@ -17,69 +17,73 @@ func sockaddrToAny(sa unix.Sockaddr) (*unix.RawSockaddrAny, Socklen, error) {
 		if sa.Port < 0 || sa.Port > 0xFFFF {
 			return nil, 0, syscall.EINVAL
 		}
-		var raw unix.RawSockaddrInet4
-		raw.Family = unix.AF_INET
-		p := (*[2]byte)(unsafe.Pointer(&raw.Port))
+		raw := new(unix.RawSockaddrAny)
+		raw4 := (*unix.RawSockaddrInet4)(unsafe.Pointer(raw))
+		raw4.Family = unix.AF_INET
+		p := (*[2]byte)(unsafe.Pointer(&raw4.Port))
 		p[0] = byte(sa.Port >> 8)
 		p[1] = byte(sa.Port)
 		for i := 0; i < len(sa.Addr); i++ {
-			raw.Addr[i] = sa.Addr[i]
+			raw4.Addr[i] = sa.Addr[i]
 		}
-		return (*unix.RawSockaddrAny)(unsafe.Pointer(&raw)), unix.SizeofSockaddrInet4, nil
+		return raw, unix.SizeofSockaddrInet4, nil
 
 	case *unix.SockaddrInet6:
 		if sa.Port < 0 || sa.Port > 0xFFFF {
 			return nil, 0, syscall.EINVAL
 		}
-		var raw unix.RawSockaddrInet6
-		raw.Family = unix.AF_INET6
-		p := (*[2]byte)(unsafe.Pointer(&raw.Port))
+		raw := new(unix.RawSockaddrAny)
+		raw6 := (*unix.RawSockaddrInet6)(unsafe.Pointer(raw))
+		raw6.Family = unix.AF_INET6
+		p := (*[2]byte)(unsafe.Pointer(&raw6.Port))
 		p[0] = byte(sa.Port >> 8)
 		p[1] = byte(sa.Port)
-		raw.Scope_id = sa.ZoneId
+		raw6.Scope_id = sa.ZoneId
 		for i := 0; i < len(sa.Addr); i++ {
-			raw.Addr[i] = sa.Addr[i]
+			raw6.Addr[i] = sa.Addr[i]
 		}
-		return (*unix.RawSockaddrAny)(unsafe.Pointer(&raw)), unix.SizeofSockaddrInet6, nil
+		return raw, unix.SizeofSockaddrInet6, nil
 
 	case *unix.SockaddrUnix:
 		name := sa.Name
 		n := len(name)
-		var raw unix.RawSockaddrUnix
-		if n >= len(raw.Path) {
+		raw := new(unix.RawSockaddrAny)
+		rawx := (*unix.RawSockaddrUnix)(unsafe.Pointer(raw))
+		if n >= len(rawx.Path) {
 			return nil, 0, syscall.EINVAL
 		}
-		raw.Family = unix.AF_UNIX
+		rawx.Family = unix.AF_UNIX
 		for i := 0; i < n; i++ {
-			raw.Path[i] = int8(name[i])
+			rawx.Path[i] = int8(name[i])
 		}
 		// length is family (uint16), name, NUL.
 		sl := Socklen(2)
 		if n > 0 {
 			sl += Socklen(n) + 1
 		}
-		if raw.Path[0] == '@' {
-			raw.Path[0] = 0
+		if rawx.Path[0] == '@' {
+			rawx.Path[0] = 0
 			// Don't count trailing NUL for abstract address.
 			sl--
 		}
-		return (*unix.RawSockaddrAny)(unsafe.Pointer(&raw)), sl, nil
+		return raw, sl, nil
 
 	case *unix.SockaddrLinklayer:
 		if sa.Ifindex < 0 || sa.Ifindex > 0x7fffffff {
 			return nil, 0, syscall.EINVAL
 		}
-		var raw unix.RawSockaddrLinklayer
-		raw.Family = unix.AF_PACKET
-		raw.Protocol = sa.Protocol
-		raw.Ifindex = int32(sa.Ifindex)
-		raw.Hatype = sa.Hatype
-		raw.Pkttype = sa.Pkttype
-		raw.Halen = sa.Halen
+		raw := new(unix.RawSockaddrAny)
+		rawl := (*unix.RawSockaddrLinklayer)(unsafe.Pointer(raw))
+		rawl.Family = unix.AF_PACKET
+		rawl.Protocol = sa.Protocol
+		rawl.Ifindex = int32(sa.Ifindex)
+		rawl.Hatype = sa.Hatype
+		rawl.Pkttype = sa.Pkttype
+		rawl.Halen = sa.Halen
 		for i := 0; i < len(sa.Addr); i++ {
-			raw.Addr[i] = sa.Addr[i]
+			rawl.Addr[i] = sa.Addr[i]
 		}
-		return (*unix.RawSockaddrAny)(unsafe.Pointer(&raw)), unix.SizeofSockaddrLinklayer, nil
+		return raw, unix.SizeofSockaddrLinklayer, nil
 	}
 	return nil, 0, syscall.EAFNOSUPPORT
 }
